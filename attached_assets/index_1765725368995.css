@@ -1,0 +1,430 @@
+/* Google Fonts are now loaded in index.html with font-display: swap */
+
+/* filepath: e:\kitchen heroo\website\kitchenhero\src\index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* Custom styles */
+
+/* KitchenHero Anime-Style Design System */
+
+@layer base {
+  :root {
+    /* Updated brand colors */
+    --background: 240 10% 98%;
+    --foreground: 240 10% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 15%;
+
+    /* Primary: #2B7A6E (H 171 S 48% L 32%) */
+    --primary: 171 48% 32%;
+    --primary-foreground: 0 0% 100%;
+    /* Slightly lighter glow of primary */
+    --primary-glow: 171 48% 44%;
+
+    /* Secondary: #F9AC28 (H 38 S 94% L 57%) */
+    --secondary: 38 94% 57%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+
+    /* Accent (and link) color: #E6522C (H 9 S 79% L 54%) */
+    --accent: 9 79% 54%;
+    --accent-foreground: 240 10% 15%;
+
+    /* Anime energy colors (unchanged) */
+    --anime-blue: 210 100% 60%;
+    --anime-pink: 320 100% 75%;
+    --anime-purple: 280 100% 70%;
+    --anime-yellow: 45 100% 60%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 60%;
+    --input: 240 6% 60%;
+    --ring: 171 48% 32%;
+
+    --radius: 0.75rem;
+
+    /* Gradients using new colors */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-anime: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--anime-purple)));
+    --gradient-energy: linear-gradient(90deg, hsl(var(--anime-blue)), hsl(var(--accent)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--anime-purple)) 100%);
+
+    --shadow-anime: 0 10px 30px -5px hsl(var(--primary) / 0.3);
+    --shadow-glow: 0 0 30px hsl(var(--primary-glow) / 0.4);
+    --shadow-card: 0 4px 20px -2px hsl(var(--foreground) / 0.1);
+
+    --transition-anime: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 240 10% 8%;
+    --foreground: 240 5% 95%;
+
+    --card: 240 10% 10%;
+    --card-foreground: 240 5% 95%;
+
+    --popover: 240 10% 10%;
+    --popover-foreground: 240 5% 95%;
+
+    /* Same updated brand colors in dark mode */
+    --primary: 171 48% 32%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 171 48% 44%;
+
+    --secondary: 38 94% 57%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 9 79% 54%;
+    --accent-foreground: 240 10% 15%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 240 5% 95%;
+
+    --border: 0 0% 18%;
+    --input: 240 4% 16%;
+    --ring: 171 48% 32%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    /* Archivo first (Latin), Tiro Bangla second (Bangla) */
+    font-family: 'Archivo','Tiro Bangla',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol',sans-serif;
+  }
+
+  /* Force Bangla font when language attribute is set */
+  :lang(bn),
+  .bn-text,
+  .tiro-bangla,
+  .tiro-bangla-regular {
+    font-family: "Tiro Bangla", serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  .tiro-bangla-regular-italic,
+  .tiro-bangla-italic {
+    font-family: "Tiro Bangla", serif;
+    font-weight: 400;
+    font-style: italic;
+  }
+
+  a {
+    color: hsl(var(--accent));
+  }
+  a:hover {
+    color: hsl(var(--accent) / 0.85);
+  }
+  a:focus {
+    outline-color: hsl(var(--accent));
+  }
+
+  /* White text on orange hover states */
+  .bg-accent:hover,
+  .hover\:bg-accent:hover,
+  [class*="bg-accent"]:hover {
+    color: white !important;
+  }
+
+  .text-accent:hover,
+  .hover\:text-accent:hover {
+    color: white !important;
+  }
+
+  /* Ensure buttons with accent background have white text on hover */
+  button[class*="bg-accent"]:hover,
+  .bg-accent:hover button,
+  .hover\:bg-accent:hover {
+    color: white !important;
+  }
+
+  /* Links with accent color should have white text when hovered */
+  a.text-accent:hover,
+  a.hover\:text-accent:hover {
+    color: white !important;
+  }
+
+  /* Custom scrollbar (unchanged) */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { @apply bg-muted; }
+  ::-webkit-scrollbar-thumb { @apply bg-primary rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-primary/80; }
+}
+
+/* NProgress Styles with Brand Colors */
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: hsl(var(--primary));
+  position: fixed;
+  z-index: 1031;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+}
+
+#nprogress .peg {
+  display: block;
+  position: absolute;
+  right: 0px;
+  width: 100px;
+  height: 100%;
+  box-shadow: 0 0 10px hsl(var(--primary)), 0 0 5px hsl(var(--primary));
+  opacity: 1.0;
+  transform: rotate(3deg) translate(0px, -4px);
+}
+
+#nprogress .spinner {
+  display: block;
+  position: fixed;
+  z-index: 1031;
+  top: 15px;
+  right: 15px;
+}
+
+#nprogress .spinner-icon {
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border: solid 2px transparent;
+  border-top-color: hsl(var(--primary));
+  border-left-color: hsl(var(--primary));
+  border-radius: 50%;
+  animation: nprogress-spinner 400ms linear infinite;
+}
+
+.nprogress-custom-parent {
+  overflow: hidden;
+  position: relative;
+}
+
+.nprogress-custom-parent #nprogress .spinner,
+.nprogress-custom-parent #nprogress .bar {
+  position: absolute;
+}
+
+@keyframes nprogress-spinner {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Safe Area Insets for Mobile Native Apps (Curved Displays) - ONLY in Capacitor native app */
+@supports (padding: max(0px)) {
+  /* Only apply safe area styles when .native-app class is present (Capacitor native app) */
+  .native-app .safe-area-top {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  
+  .native-app .safe-area-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  
+  .native-app .safe-area-left {
+    padding-left: max(env(safe-area-inset-left), 0px);
+  }
+  
+  .native-app .safe-area-right {
+    padding-right: max(env(safe-area-inset-right), 0px);
+  }
+  
+  .native-app .safe-area-x {
+    padding-left: max(env(safe-area-inset-left), 0px);
+    padding-right: max(env(safe-area-inset-right), 0px);
+  }
+  
+  .native-app .safe-area-y {
+    padding-top: max(env(safe-area-inset-top), 0px);
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  
+  .native-app .safe-area-all {
+    padding-top: max(env(safe-area-inset-top), 0px);
+    padding-right: max(env(safe-area-inset-right), 0px);
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+    padding-left: max(env(safe-area-inset-left), 0px);
+  }
+}
+
+/* Native App Styling Improvements */
+@media (max-width: 768px) {
+  /* Ensure dialogs are centered on mobile - but exclude bottom sheets and left/right side drawers */
+  [role="dialog"][data-state="open"]:not([class*="bottom-0"]):not([class*="inset-x-0"]):not([class*="left-0"]):not([class*="right-0"]),
+  [role="dialog"][data-state="closed"]:not([class*="bottom-0"]):not([class*="inset-x-0"]):not([class*="left-0"]):not([class*="right-0"]) {
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin-left: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  /* Ensure bottom sheets stay at bottom and slide from bottom */
+  [role="dialog"][class*="bottom-0"],
+  [role="dialog"][class*="inset-x-0"][class*="bottom-0"] {
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    transform: none !important;
+  }
+
+  /* Smooth scrolling for native feel */
+  html {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Better touch targets - removed min-height/min-width to allow natural sizing */
+  
+  /* Native-like transitions */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Prevent text selection on buttons */
+  button, [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Native-like shadows and borders */
+  .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Ensure fixed elements stay on top */
+  .fixed {
+    position: fixed !important;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+
+  /* Ensure header doesn't overlap cart - allow z-30 for header */
+  header[class*="sticky"] {
+    z-index: 30 !important;
+  }
+}
+
+/* Global: Ensure offcanvas cart is always on top */
+[data-headlessui-state="open"],
+[data-headlessui-dialog-panel],
+[data-headlessui-dialog-overlay],
+div[class*="z-[9999]"] {
+  z-index: 9999 !important;
+}
+
+/* Ensure cart container is above header */
+div[class*="fixed"][class*="inset-0"][class*="z-[9999]"],
+[data-headlessui-dialog-overlay][class*="z-[9999]"] {
+  z-index: 9999 !important;
+}
+
+/* Ensure header stays below cart and mobile menu */
+header.sticky {
+  z-index: 30 !important;
+}
+
+/* Ensure product bottom menu stays fixed at viewport bottom on mobile */
+.product-bottom-menu-fixed {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 99999 !important;
+  transform: translateZ(0) !important;
+  -webkit-transform: translateZ(0) !important;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Ensure mobile menu (Sheet) is above header and product bottom menu */
+[data-radix-dialog-content][class*="z-[100001]"],
+div[class*="z-[100001]"][class*="inset-y-0"][class*="left-0"],
+[data-radix-dialog-content][class*="left-0"] {
+  z-index: 100001 !important;
+  position: fixed !important;
+}
+
+/* Ensure Sheet overlay is above header and product bottom menu */
+[data-radix-dialog-overlay][class*="z-[100000]"],
+div[class*="z-[100000]"][class*="fixed"][class*="inset-0"],
+[data-radix-dialog-overlay] {
+  z-index: 100000 !important;
+  position: fixed !important;
+}
+
+/* Ensure mobile menu slides from left */
+[data-radix-dialog-content][class*="left-0"] {
+  left: 0 !important;
+  right: auto !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  transform: none !important;
+  transform-origin: left center !important;
+  margin: 0 !important;
+}
+
+/* Ensure body has proper padding on mobile when bottom menu is visible */
+@media (max-width: 767px) {
+  body:has(.product-bottom-menu-fixed) {
+    padding-bottom: 80px;
+  }
+}
+
+/* Ensure Select dropdown appears above filter panel */
+[data-radix-select-content] {
+  z-index: 1000001 !important;
+}
+
+/* Override z-index for Select dropdowns in filter panels */
+[data-radix-select-content][class*="z-[1000001]"] {
+  z-index: 1000001 !important;
+  position: relative !important;
+}
+
+/* Ensure native app feels native */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific styles */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
