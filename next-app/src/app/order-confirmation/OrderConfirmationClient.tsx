@@ -8,11 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Download, Home, Package } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
-import SEOHead from '@/components/seo/SEOHead';
-import { useHeadlessSEO } from '@/hooks/useYoastSEO';
-import { getCanonicalUrl } from '@/lib/utils';
 import { getSiteName, getContactEmail, getTenantConfig } from '@/lib/tenant-config';
-import { generateOrganizationSchema, generateWebsiteSchema } from '@/lib/schema-generator';
 import { WP_BASE_URL } from '@/lib/config';
 import { useCartStore } from '@/store/cartStore';
 
@@ -120,16 +116,7 @@ const OrderConfirmationClient = () => {
   const [order, setOrder] = useState<WooOrder | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const { purchaseTracked, setPurchaseTracked } = useCartStore();
-  const { seoData } = useHeadlessSEO('/order-confirmation');
   const siteName = getSiteName();
-  const structuredData = useMemo(
-    () => [
-      generateWebsiteSchema(),
-      generateOrganizationSchema(),
-      ...(seoData?.json_ld ?? []),
-    ],
-    [seoData]
-  );
 
   useEffect(() => {
     setHydrated(true);
@@ -384,15 +371,6 @@ const OrderConfirmationClient = () => {
 
   return (
     <>
-      <SEOHead
-        seoData={seoData}
-        fallback={{
-          title: `Order Confirmation - ${siteName}`,
-          description: `Thank you for your purchase! Your order is confirmed with ${siteName}.`,
-          canonical: getCanonicalUrl('/order-confirmation'),
-        }}
-        structuredData={structuredData}
-      />
       <div className="container mx-auto px-4 py-10 text-left space-y-8">
         <div className="text-center space-y-3">
           <p className="text-xs uppercase tracking-[0.5em] text-muted-foreground">Order Confirmation</p>
