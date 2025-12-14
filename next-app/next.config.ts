@@ -1,4 +1,3 @@
-import path from "path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -10,9 +9,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  turbopack: {
-    root: path.resolve(__dirname),
-  },
+  allowedDevOrigins: [
+    "https://*.replit.dev",
+    "https://*.replit.app",
+    "https://*.repl.co",
+  ],
 };
 
 export default nextConfig;
