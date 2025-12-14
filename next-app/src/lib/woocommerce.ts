@@ -673,11 +673,11 @@ export const getStoreContext = async (forceRefresh: boolean = false): Promise<Wo
 
 export const createOrder = async (orderData: any): Promise<any> => {
   // Use the Headless Proxy Manager order endpoint
-  const WP_ORDER_PROXY = envVars.VITE_WP_ORDER_PROXY_URL;
-  const WP_ORDER_PROXY_SECRET = envVars.VITE_WP_ORDER_PROXY_SECRET;
+  const WP_ORDER_PROXY = process.env.NEXT_PUBLIC_WP_ORDER_PROXY_URL;
+  const WP_ORDER_PROXY_SECRET = process.env.NEXT_PUBLIC_WP_ORDER_PROXY_SECRET;
 
   if (!WP_ORDER_PROXY) {
-    throw new Error('Order proxy not configured. Please set VITE_WP_ORDER_PROXY_URL in environment variables.');
+    throw new Error('Order proxy not configured. Please set NEXT_PUBLIC_WP_ORDER_PROXY_URL in environment variables.');
   }
 
   const headers: any = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
