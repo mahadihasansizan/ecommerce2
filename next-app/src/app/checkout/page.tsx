@@ -294,7 +294,8 @@ const CheckoutPage = () => {
 
   useEffect(() => {
     cartStore.closeCart();
-  }, [cartStore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => {
