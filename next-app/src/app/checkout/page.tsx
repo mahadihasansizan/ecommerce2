@@ -18,7 +18,9 @@ import {
   getCountries,
   getCountryStates,
   getDefaultCountryStates,
+  getPaymentGateways,
   getStoreContext,
+  validateOrderData,
   type WooCountry,
   type WooShippingRate,
   type WooState,
@@ -150,6 +152,7 @@ const CheckoutPage = () => {
     clearCart,
     applyCoupon,
     removeCoupon,
+    couponCode,
     couponApplied,
     couponDiscount,
     couponLoading,
@@ -161,8 +164,9 @@ const CheckoutPage = () => {
   const [countries, setCountries] = useState<WooCountry[]>([]);
   const [states, setStates] = useState<WooState[]>([]);
   const [loadingStates, setLoadingStates] = useState(true);
-  const selectedPaymentId = 'cod';
-  const selectedPaymentTitle = 'Cash on delivery';
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string>('cod');
+  const [selectedPaymentTitle, setSelectedPaymentTitle] = useState<string>('Cash on delivery');
   const [shippingRates, setShippingRates] = useState<WooShippingRate[]>([]);
   const [selectedShippingId, setSelectedShippingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -211,20 +215,38 @@ const CheckoutPage = () => {
   }, []);
 
   useEffect(() => {
-    const loadStates = async () => {
-      setLoadingStates(true);
-      const countryCode = formData.country || storeContext?.default_country || 'BD';
-      const result = await getCountryStates(countryCode);
-      setStates(result);
-      if (!result.find((s) => s.code === formData.state)) {
-        setFormData((prev) => ({ ...prev, state: '' }));
+    const fetchPayments = async () => {
+      try {
+        const methods = await getPaymentGateways();
+        const enabled = methods.filter((m: any) => m.enabled);
+        setPaymentMethods(enabled);
+        if (enabled.length > 0) {
+          setSelectedPaymentId(enabled[0].id || 'cod');
+          setSelectedPaymentTitle(enabled[0].title || enabled[0].id || 'Cash on delivery');
+        }
+      } catch (err) {
+        console.error('Failed to load payment methods', err);
       }
-      setLoadingStates(false);
     };
-    if (formData.country) {
-      loadStates();
-    }
-  }, [formData.country, formData.state, storeContext]);
+    fetchPayments();
+  }, []);
+
+  useEffect(() => {
+    const loadStates = async () => {
+      if (!formData.country) return;
+      setLoadingStates(true);
+      try {
+        const countryCode = formData.country;
+        const result = await getCountryStates(countryCode);
+        setStates(result);
+      } catch (err) {
+        console.error('Failed to load states for country', err);
+      } finally {
+        setLoadingStates(false);
+      }
+    };
+    loadStates();
+  }, [formData.country]);
 
   const refreshShippingRates = useCallback(async () => {
     if (!items.length) return;
@@ -291,66 +313,182 @@ const CheckoutPage = () => {
       if (field === 'phone' && value && !/^\d{11}$/.test(value)) {
         next.phone = 'Phone must be exactly 11 digits';
       }
+      if (field === 'email' && createAccountChecked && !value.trim()) {
+        next.email = 'Email is required to create an account';
+      } else if (field === 'email' && value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+        next.email = 'Please enter a valid email address';
+      } else if (field === 'email') {
+        delete next.email;
+      }
       return next;
     });
   };
 
+  const selectedShipping = shippingRates.find((r) => r.id === selectedShippingId) || shippingRates[0];
   const subtotal = getTotalPrice();
-  const shippingCost = Number(shippingRates.find((rate) => rate.id === selectedShippingId)?.total || 0);
+  const shippingCost = selectedShipping ? Number(selectedShipping.total || 0) : 0;
   const grandTotal = Math.max(0, subtotal - (couponApplied ? couponDiscount : 0)) + shippingCost;
 
   const formatPrice = (value: number) => `${currencySymbol || currencyCode || ''}${value.toFixed(2)}`;
 
   const handleSubmit = async (event?: React.FormEvent) => {
     event?.preventDefault();
+
+    if (createAccountChecked && !isAuthenticated) {
+      const email = formData.email.trim();
+      if (!email) {
+        toast.error('Email is required to create an account');
+        setTouched((prev) => ({ ...prev, email: true }));
+        setErrors((prev) => ({ ...prev, email: 'Email is required to create an account' }));
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast.error('Please enter a valid email address');
+        setTouched((prev) => ({ ...prev, email: true }));
+        setErrors((prev) => ({ ...prev, email: 'Please enter a valid email address' }));
+        return;
+      }
+    }
+
+    const newErrors: Record<string, string> = {};
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
+    else if (!/^\d{11}$/.test(formData.phone.trim())) newErrors.phone = 'Phone must be exactly 11 digits';
+    if (createAccountChecked && !isAuthenticated) {
+      if (!formData.email.trim()) newErrors.email = 'Email is required to create an account';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = 'Please enter a valid email address';
+    }
+    if (!formData.address.trim()) newErrors.address = 'Address is required';
+    if (!formData.country) newErrors.country = 'Country is required';
+    if (!formData.state) newErrors.state = 'State is required';
+    setErrors(newErrors);
+
+    setTouched({
+      name: true,
+      phone: true,
+      email: true,
+      address: true,
+      country: true,
+      postcode: true,
+      state: true,
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      const errorMessages = Object.values(newErrors);
+      toast.error(`Please fix the following errors:\n${errorMessages.join('\n')}`);
+      return;
+    }
+
+    const invalidItems = items.filter((item: any) =>
+      !item.productId ||
+      item.productId <= 0 ||
+      isNaN(item.productId) ||
+      item.quantity <= 0 ||
+      isNaN(item.quantity)
+    );
+
+    if (invalidItems.length > 0) {
+      console.error('Invalid cart items found:', invalidItems);
+      toast.error('Some items in your cart are invalid. Please remove them and try again.');
+      return;
+    }
+
+    if (shippingLoading && !selectedShipping) {
+      toast.error('Calculating shipping, please try again in a moment.');
+      return;
+    }
+
     setIsProcessing(true);
+
+    const email = formData.email?.trim() ? formData.email.trim() : `${formData.phone}+${items.length}@kitchenhero.xyz`;
+
+    const selectedState = states.find((s) => s.code === formData.state) || states.find((s) => s.name === formData.state);
+    const stateCode = selectedState ? selectedState.code : formData.state;
+    const stateName = selectedState ? selectedState.name : formData.state;
+    const countryCode = formData.country || storeContext?.default_country || 'BD';
+
+    const shippingLine = selectedShipping
+      ? {
+          method_id: selectedShipping.method_id,
+          method_title: selectedShipping.label || 'Shipping',
+          total: Number(selectedShipping.total || 0).toFixed(2),
+          instance_id: selectedShipping.instance_id,
+        }
+      : undefined;
+
+    const lineItems = items.map((item: any) => {
+      const lineItem: any = {
+        product_id: parseInt(item.productId.toString()),
+        quantity: parseInt(item.quantity.toString()),
+      };
+
+      if (item.variationId && item.variationId > 0 && !isNaN(item.variationId)) {
+        lineItem.variation_id = parseInt(item.variationId.toString());
+      }
+
+      if (item.attributes && Object.keys(item.attributes).length > 0) {
+        lineItem.meta_data = Object.entries(item.attributes).map(([k, v]) => ({
+          key: (k as string).startsWith('pa_') ? (k as string) : `pa_${k as string}`,
+          value: v,
+        }));
+      }
+
+      return lineItem;
+    });
+
     const nameParts = formData.name.trim().split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    const orderData = {
+    const orderData: any = {
+      payment_method: selectedPaymentId || paymentMethods[0]?.id || 'cod',
+      payment_method_title: selectedPaymentTitle || paymentMethods[0]?.title || 'Cash on delivery',
+      set_paid: false,
+      currency: currencyCode || undefined,
       billing: {
         first_name: firstName,
         last_name: lastName,
-        email: formData.email || '',
+        email,
         phone: formData.phone,
         address_1: formData.address,
-        state: formData.state,
-        country: formData.country,
+        address_2: '',
+        city: '',
+        state: stateCode,
+        country: countryCode,
         postcode: formData.postcode,
       },
       shipping: {
         first_name: firstName,
         last_name: lastName,
         address_1: formData.address,
-        state: formData.state,
-        country: formData.country,
+        address_2: '',
+        city: '',
+        state: stateCode,
+        country: countryCode,
         postcode: formData.postcode,
         phone: formData.phone,
       },
-      line_items: items.map((item: any) => ({
-        product_id: Number(item.productId),
-        quantity: Number(item.quantity),
-        variation_id: item.variationId ? Number(item.variationId) : undefined,
-      })),
-      shipping_lines: selectedShippingId
-        ? [
-            {
-              method_id: shippingRates.find((rate) => rate.id === selectedShippingId)?.method_id,
-              method_title: shippingRates.find((rate) => rate.id === selectedShippingId)?.label,
-              total: shippingCost.toFixed(2),
-              instance_id: shippingRates.find((rate) => rate.id === selectedShippingId)?.instance_id,
-            },
-          ]
-        : [],
-      payment_method: selectedPaymentId,
-      payment_method_title: selectedPaymentTitle,
-      currency: currencyCode || undefined,
-      set_paid: false,
+      meta_data: [
+        { key: '_kh_state_label', value: stateName },
+        { key: '_kh_shipping_rate', value: selectedShipping?.id || 'none' },
+        { key: '_kh_shipping_label', value: selectedShipping?.label || 'Shipping' },
+      ],
+      line_items: lineItems,
+      shipping_lines: shippingLine ? [shippingLine] : [],
+      ...(couponApplied && couponCode ? { coupon_lines: [{ code: couponCode }] } : {}),
     };
 
     try {
+      const validation = validateOrderData(orderData);
+      if (!validation.isValid) {
+        console.error('Order validation failed:', validation.errors);
+        toast.error(`Order validation failed: ${validation.errors.join(', ')}`);
+        setIsProcessing(false);
+        return;
+      }
+
       const order = await createOrder(orderData);
+      
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.setItem('kitchenhero-latest-order', JSON.stringify(order));
@@ -358,12 +496,14 @@ const CheckoutPage = () => {
           console.warn('Failed to cache order data for confirmation page:', storageError);
         }
       }
+      
       clearCart();
       setIsProcessing(false);
       router.push('/order-confirmation');
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to place the order.');
+    } catch (err: any) {
+      console.error('Order creation failed:', err);
+      const errorMessage = err?.message || err?.response?.data?.message || 'Failed to place order. Please try again.';
+      toast.error(errorMessage);
       setIsProcessing(false);
     }
   };
@@ -490,7 +630,7 @@ const CheckoutPage = () => {
             <CardContent className="space-y-4 text-sm">
               {items.map((item: any) => (
                 <div key={item.productId} className="flex items-center justify-between gap-3">
-                  <div className="flex-1">{item.name}</div>
+                  <div className="flex-1">{item.name} x {item.quantity}</div>
                   <div>{formatPrice(item.price * item.quantity)}</div>
                 </div>
               ))}
