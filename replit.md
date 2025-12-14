@@ -28,8 +28,15 @@ cd next-app && npm run dev
 The development server runs on port 5000.
 
 ## Environment Variables
-- `NEXT_PUBLIC_SITE_URL` - Site URL for the application (optional, uses fallback)
-- Backend API configuration required for full functionality
+- `NEXT_PUBLIC_SITE_URL` - Site URL for the application
+- `NEXT_PUBLIC_WORDPRESS_BASE_URL` - WordPress base URL
+- `NEXT_PUBLIC_WP_PROXY_BASE_URL` - WordPress headless proxy base URL
+- `NEXT_PUBLIC_WP_ORDER_PROXY_URL` - Order creation proxy URL
+- `NEXT_PUBLIC_WP_ORDER_PROXY_SECRET` - Order proxy secret
+- `NEXT_PUBLIC_WC_API_URL` - WooCommerce API URL
+- `NEXT_PUBLIC_WC_CONSUMER_KEY` - WooCommerce consumer key
+- `NEXT_PUBLIC_WC_CONSUMER_SECRET` - WooCommerce consumer secret
+- `NEXT_PUBLIC_GREENWEB_SMS_TOKEN` - SMS token for notifications
 
 ## Notes
 - This is a headless frontend - requires WordPress/WooCommerce backend configuration
