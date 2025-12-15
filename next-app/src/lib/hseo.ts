@@ -35,69 +35,96 @@ export const getHSEOHead = async (path: string): Promise<HSEOHeadData | null> =>
   try {
     // Normalize path - ensure it starts with /
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    
+
     // HSEO REST API endpoint (via headless-proxy namespace)
-    const WP_PROXY_BASE = process.env.VITE_WP_PROXY_BASE_URL || '/wp-json/headless-proxy/v1';
-    const endpoint = `${WP_PROXY_BASE}/hseo/get?path=${encodeURIComponent(normalizedPath)}`;
-    
-    // Fetch HSEO data directly (not via proxy since it's already in the proxy namespace)
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      // 404 means no SEO data found - return null (not an error)
-      if (response.status === 404) {
+    const WP_PROXY_BASE = process.env.VITE_WP_PROXY_BASE_URL || process.env.NEXT_PUBLIC_WP_PROXY_BASE_URL || '';
+
+    // Skip HSEO fetch during build if no base URL is configured
+    if (!WP_PROXY_BASE || typeof window === 'undefined') {
+      return null;
+    }
+
+    // Ensure we have an absolute URL
+    let endpoint: string;
+    if (WP_PROXY_BASE.startsWith('http')) {
+      endpoint = `${WP_PROXY_BASE}/hseo/get?path=${encodeURIComponent(normalizedPath)}`;
+    } else {
+      // During SSR, use site URL as base
+      const siteUrl = getSiteUrl();
+      endpoint = `${siteUrl}${WP_PROXY_BASE}/hseo/get?path=${encodeURIComponent(normalizedPath)}`;
+    }
+
+    // Add timeout to prevent hanging during build
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+    try {
+      // Fetch HSEO data directly (not via proxy since it's already in the proxy namespace)
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        // 404 means no SEO data found - return null (not an error)
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`HSEO API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Check if response is an error object
+      if (data && data.code && data.message) {
+        // WordPress REST API error format
         return null;
       }
-      throw new Error(`HSEO API error: ${response.status}`);
+
+      if (!data) {
+        return null;
+      }
+
+      // Build HSEOHeadData object
+      const headData: HSEOHeadData = {
+        title: data.title || '',
+        description: data.description || '',
+        keywords: data.keywords || '',
+        canonical: data.canonical || (getSiteUrl() + normalizedPath),
+        og_title: data.og_title || data.title || '',
+        og_description: data.og_description || data.description || '',
+        og_image: data.og_image || '',
+        og_url: data.og_url || data.canonical || (getSiteUrl() + normalizedPath),
+        og_type: data.og_type || 'website',
+        og_site_name: data.og_site_name || '',
+        twitter_card: data.twitter_card || 'summary_large_image',
+        twitter_title: data.twitter_title || data.og_title || data.title || '',
+        twitter_description: data.twitter_description || data.og_description || data.description || '',
+        twitter_image: data.twitter_image || data.og_image || '',
+        robots: data.robots || 'index, follow',
+        json_ld: Array.isArray(data.json_ld) ? data.json_ld : [],
+      };
+
+      return headData;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
     }
-    
-    const data = await response.json();
-    
-    // Check if response is an error object
-    if (data && data.code && data.message) {
-      // WordPress REST API error format
-      return null;
-    }
-    
-    if (!data) {
-      return null;
-    }
-    
-    // No debug logging - only log errors
-    
-    // Build HSEOHeadData object
-    const headData: HSEOHeadData = {
-      title: data.title || '',
-      description: data.description || '',
-      keywords: data.keywords || '',
-      canonical: data.canonical || (getSiteUrl() + normalizedPath),
-      og_title: data.og_title || data.title || '',
-      og_description: data.og_description || data.description || '',
-      og_image: data.og_image || '',
-      og_url: data.og_url || data.canonical || (getSiteUrl() + normalizedPath),
-      og_type: data.og_type || 'website',
-      og_site_name: data.og_site_name || '',
-      twitter_card: data.twitter_card || 'summary_large_image',
-      twitter_title: data.twitter_title || data.og_title || data.title || '',
-      twitter_description: data.twitter_description || data.og_description || data.description || '',
-      twitter_image: data.twitter_image || data.og_image || '',
-      robots: data.robots || 'index, follow',
-      json_ld: Array.isArray(data.json_ld) ? data.json_ld : [],
-    };
-    
-    return headData;
   } catch (error) {
     // Silently handle errors - HSEO might not be available
     if (error instanceof Error && (error.name === 'AbortError' || error.name === 'InvalidEndpointError')) {
       return null;
     }
-    console.warn('Failed to fetch HSEO data:', error);
+    // Don't log during build
+    if (typeof window !== 'undefined') {
+      console.warn('Failed to fetch HSEO data:', error);
+    }
     return null;
   }
 };
@@ -124,15 +151,15 @@ export const updateHSEOData = async (
 ): Promise<boolean> => {
   try {
     const endpoint = `/hseo/update`;
-    
+
     const payload = {
       object_id: objectId,
       object_type: objectType,
       ...data,
     };
-    
+
     const response = await proxyRequest(endpoint, payload, 'POST');
-    
+
     return response && response.success === true;
   } catch (error) {
     console.error('Failed to update HSEO data:', error);
