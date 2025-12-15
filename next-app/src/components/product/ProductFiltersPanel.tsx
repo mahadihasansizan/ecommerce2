@@ -13,6 +13,7 @@ interface Props {
   onMinPriceChange: (v: string) => void
   onMaxPriceChange: (v: string) => void
   onSortChange: (v: string) => void
+  onReset: () => void
   showHeading?: boolean
 }
 
@@ -36,23 +37,21 @@ export default function ProductFiltersPanel({
   onMinPriceChange,
   onMaxPriceChange,
   onSortChange,
+  onReset,
   showHeading = false
 }: Props) {
   return (
-    <div className="space-y-6">
-      {showHeading && <h3 className="text-lg font-semibold">Filters</h3>}
+    <div className="space-y-6 bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+      {showHeading && <h3 className="text-lg font-bold text-gray-900">Filters</h3>}
 
       {/* Category */}
-      <div>
-        <label className="block mb-1 text-sm font-medium">Categories</label>
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-gray-700">Categories</label>
         <Select value={category} onValueChange={(v) => onCategoryChange(v)}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full bg-gray-50 border-gray-200 focus:ring-primary/20">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
-          <SelectContent 
-            className="!z-[1000001]" 
-            style={{ zIndex: 1000001, position: 'relative' }}
-          >
+          <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
             {categories.map(c => {
               const count = typeof c.count === 'number' ? c.count : 0;
@@ -68,40 +67,49 @@ export default function ProductFiltersPanel({
       </div>
 
       {/* Price */}
-      <div>
-        <label className="block mb-1 text-sm font-medium">Price Range</label>
-        <div className="flex gap-2">
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-gray-700">Price Range</label>
+        <div className="flex gap-3">
           <Input
             type="number"
             placeholder="Min"
             value={minPrice}
             onChange={(e) => onMinPriceChange(e.target.value)}
+            className="bg-gray-50 border-gray-200 focus:ring-primary/20"
           />
           <Input
             type="number"
             placeholder="Max"
             value={maxPrice}
             onChange={(e) => onMaxPriceChange(e.target.value)}
+            className="bg-gray-50 border-gray-200 focus:ring-primary/20"
           />
         </div>
       </div>
 
       {/* Sort */}
-      <div>
-        <label className="block mb-1 text-sm font-medium">Sort By</label>
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-gray-700">Sort By</label>
         <Select value={sortBy} onValueChange={onSortChange}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full bg-gray-50 border-gray-200 focus:ring-primary/20">
             <SelectValue placeholder="Newest First" />
           </SelectTrigger>
-          <SelectContent 
-            className="!z-[1000001]" 
-            style={{ zIndex: 1000001, position: 'relative' }}
-          >
+          <SelectContent>
             {SORT_OPTIONS.map(o => (
               <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Reset Button */}
+      <div className="pt-2">
+        <button
+          onClick={onReset}
+          className="text-sm font-medium text-gray-600 hover:text-primary transition-colors flex items-center gap-1"
+        >
+          Reset
+        </button>
       </div>
     </div>
   )

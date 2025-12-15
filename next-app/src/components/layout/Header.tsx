@@ -93,7 +93,7 @@ const Header = () => {
   const headerRef = useRef<HTMLElement>(null);
   const mobileCartBadgeRef = useRef<HTMLSpanElement>(null);
   const desktopCartBadgeRef = useRef<HTMLSpanElement>(null);
-  
+
   // Wishlist
   const { getTotalItems: getWishlistTotal } = useWishlistStore();
   const wishlistCount = getWishlistTotal();
@@ -126,7 +126,7 @@ const Header = () => {
     if (totalItems > prevTotalItemsRef.current) {
       // Animate both mobile and desktop badges
       const badges = [mobileCartBadgeRef.current, desktopCartBadgeRef.current].filter(Boolean) as HTMLElement[];
-      
+
       badges.forEach((badge) => {
         if (badge) {
           gsap.fromTo(
@@ -291,14 +291,14 @@ const Header = () => {
       if (state && typeof state.faqCount === 'number') {
         setFaqCount(state.faqCount);
       }
-      
+
       // Listen for FAQ count updates
       const handleFaqCountUpdate = (event: CustomEvent) => {
         setFaqCount(event.detail.count);
       };
-      
+
       window.addEventListener('faqCountUpdated', handleFaqCountUpdate as EventListener);
-      
+
       return () => {
         window.removeEventListener('faqCountUpdated', handleFaqCountUpdate as EventListener);
       };
@@ -348,7 +348,7 @@ const Header = () => {
               rel="noopener noreferrer"
               className="text-xs font-medium text-white hover:text-white/80 transition-colors"
             >
-            WhatsApp us: 01835868877
+              WhatsApp us: 01835868877
             </a>
 
             {/* Second div: Social icons */}
@@ -361,7 +361,7 @@ const Header = () => {
                 aria-label="Follow us on Facebook"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
               </a>
               <a
@@ -372,7 +372,7 @@ const Header = () => {
                 aria-label="Follow us on Instagram"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12.017 0C8.396 0 7.996.014 6.79.067 5.59.12 4.694.287 3.94.547c-.795.275-1.467.647-2.14 1.32S.822 3.205.547 4c-.26.754-.427 1.65-.48 2.85C.014 7.996 0 8.396 0 12.017s.014 4.021.067 5.227c.053 1.2.22 2.096.48 2.85.275.795.647 1.467 1.32 2.14s1.125.975 1.92 1.25c.754.26 1.65.427 2.85.48C7.996 23.986 8.396 24 12.017 24s4.021-.014 5.227-.067c1.2-.053 2.096-.22 2.85-.48.795-.275 1.467-.647 2.14-1.32s.975-1.125 1.25-1.92c.26-.754.427-1.65.48-2.85.053-1.206.067-1.606.067-5.227s-.014-4.021-.067-5.227c-.053-1.2-.22-2.096-.48-2.85-.275-.795-.647-1.467-1.32-2.14S20.812.822 20.017.547c-.754-.26-1.65-.427-2.85-.48C16.021.014 15.621 0 12.017 0zm0 2.25c3.539 0 3.957.014 5.357.078 1.35.064 2.082.29 2.562.48.606.24 1.035.53 1.49.985.455.455.745.884.985 1.49.19.48.416 1.212.48 2.562.064 1.4.078 1.818.078 5.357s-.014 3.957-.078 5.357c-.064 1.35-.29 2.082-.48 2.562-.24.606-.53 1.035-.985 1.49-.455.455-.884.745-1.49.985-.48.19-1.212.416-2.562.48-1.4.064-1.818.078-5.357.078s-3.957-.014-5.357-.078c-1.35-.064-2.082-.29-2.562-.48-.606-.24-1.035-.53-1.49-.985-.455-.455-.745-.884-.985-1.49-.19-.48-.416-1.212-.48-2.562C2.075 15.621 2.061 15.203 2.061 12.017s.014-3.957.078-5.357c.064-1.35.29-2.082.48-2.562.24-.606.53-1.035.985-1.49.455-.455.884-.745 1.49-.985.48-.19 1.212-.416 2.562-.48 1.4-.064 1.818-.078 5.357-.078zM12.017 5.838c-3.403 0-6.17 2.767-6.17 6.17s2.767 6.17 6.17 6.17 6.17-2.767 6.17-6.17-2.767-6.17-6.17-6.17zm0 10.162c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  <path d="M12.017 0C8.396 0 7.996.014 6.79.067 5.59.12 4.694.287 3.94.547c-.795.275-1.467.647-2.14 1.32S.822 3.205.547 4c-.26.754-.427 1.65-.48 2.85C.014 7.996 0 8.396 0 12.017s.014 4.021.067 5.227c.053 1.2.22 2.096.48 2.85.275.795.647 1.467 1.32 2.14s1.125.975 1.92 1.25c.754.26 1.65.427 2.85.48C7.996 23.986 8.396 24 12.017 24s4.021-.014 5.227-.067c1.2-.053 2.096-.22 2.85-.48.795-.275 1.467-.647 2.14-1.32s.975-1.125 1.25-1.92c.26-.754.427-1.65.48-2.85.053-1.206.067-1.606.067-5.227s-.014-4.021-.067-5.227c-.053-1.2-.22-2.096-.48-2.85-.275-.795-.647-1.467-1.32-2.14S20.812.822 20.017.547c-.754-.26-1.65-.427-2.85-.48C16.021.014 15.621 0 12.017 0zm0 2.25c3.539 0 3.957.014 5.357.078 1.35.064 2.082.29 2.562.48.606.24 1.035.53 1.49.985.455.455.745.884.985 1.49.19.48.416 1.212.48 2.562.064 1.4.078 1.818.078 5.357s-.014 3.957-.078 5.357c-.064 1.35-.29 2.082-.48 2.562-.24.606-.53 1.035-.985 1.49-.455.455-.884.745-1.49.985-.48.19-1.212.416-2.562.48-1.4.064-1.818.078-5.357.078s-3.957-.014-5.357-.078c-1.35-.064-2.082-.29-2.562-.48-.606-.24-1.035-.53-1.49-.985-.455-.455-.745-.884-.985-1.49-.19-.48-.416-1.212-.48-2.562C2.075 15.621 2.061 15.203 2.061 12.017s.014-3.957.078-5.357c.064-1.35.29-2.082.48-2.562.24-.606.53-1.035.985-1.49.455-.455.884-.745 1.49-.985.48-.19 1.212-.416 2.562-.48 1.4-.064 1.818-.078 5.357-.078zM12.017 5.838c-3.403 0-6.17 2.767-6.17 6.17s2.767 6.17 6.17 6.17 6.17-2.767 6.17-6.17-2.767-6.17-6.17-6.17zm0 10.162c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                 </svg>
               </a>
             </div>
@@ -444,7 +444,7 @@ const Header = () => {
                         {/* Thumb */}
                         <div className="h-10 w-10 rounded overflow-hidden bg-muted shrink-0 border border-border">
                           {result.image ? (
-                            
+
                             <img
                               src={result.image}
                               alt={result.name}
@@ -566,7 +566,7 @@ const Header = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => router.push('/account')} className="cursor-pointer">
+                      <DropdownMenuItem onClick={() => router.push('/account')} className="cursor-pointer">
                         <Squares2X2Icon className="h-4 w-4 mr-2" />
                         Dashboard
                       </DropdownMenuItem>
@@ -654,21 +654,21 @@ const Header = () => {
                 )}
 
                 {/* Mobile Wishlist */}
-                  <Button
-                    ref={wishlistIconRef}
-                    data-wishlist-icon
-                    variant="outline"
-                    size="sm"
-                    className="relative border-2 z-20"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      router.push('/wishlist');
-                    }}
-                    aria-label="Wishlist"
-                  >
+                <Button
+                  ref={wishlistIconRef}
+                  data-wishlist-icon
+                  variant="outline"
+                  size="sm"
+                  className="relative border-2 z-20"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    router.push('/wishlist');
+                  }}
+                  aria-label="Wishlist"
+                >
                   <HeartIcon className="h-5 w-5" />
-                  {wishlistCount > 0 && (
+                  {isMounted && wishlistCount > 0 && (
                     <span suppressHydrationWarning>
                       <Badge
                         variant="destructive"
@@ -681,15 +681,15 @@ const Header = () => {
                 </Button>
 
                 {/* Mobile Cart - with border like My Account */}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="relative border-2 z-20" 
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="relative border-2 z-20"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     openCart();
-                  }} 
+                  }}
                   aria-label="Open cart"
                 >
                   <ShoppingCartIcon className={`h-5 w-5 transition-transform duration-300 ${cartAnimation ? 'scale-125' : ''}`} />
@@ -697,9 +697,8 @@ const Header = () => {
                     <span ref={mobileCartBadgeRef} suppressHydrationWarning>
                       <Badge
                         variant="destructive"
-                        className={`absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0 bg-primary transition-all duration-300 ${
-                          cartAnimation ? 'animate-bounce scale-125' : ''
-                        }`}
+                        className={`absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0 bg-primary transition-all duration-300 ${cartAnimation ? 'animate-bounce scale-125' : ''
+                          }`}
                       >
                         {totalItems}
                       </Badge>
@@ -709,19 +708,19 @@ const Header = () => {
               </div>
 
               {/* Desktop: Wishlist */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="relative hidden md:flex z-20"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    router.push('/wishlist');
-                  }}
-                  aria-label="Wishlist"
-                >
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative hidden md:flex z-20"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  router.push('/wishlist');
+                }}
+                aria-label="Wishlist"
+              >
                 <HeartIcon className="h-6 w-6" />
-                {wishlistCount > 0 && (
+                {isMounted && wishlistCount > 0 && (
                   <span suppressHydrationWarning>
                     <Badge
                       variant="destructive"
@@ -734,25 +733,24 @@ const Header = () => {
               </Button>
 
               {/* Desktop: Cart (keep existing) */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="relative hidden md:flex z-20" 
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative hidden md:flex z-20"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   openCart();
-                }} 
+                }}
                 aria-label="Open cart"
               >
                 <ShoppingCartIcon className={`h-6 w-6 transition-transform duration-300 ${cartAnimation ? 'scale-125' : ''}`} />
                 {isMounted && totalItems > 0 && (
-                    <span ref={desktopCartBadgeRef} suppressHydrationWarning>
+                  <span ref={desktopCartBadgeRef} suppressHydrationWarning>
                     <Badge
                       variant="destructive"
-                      className={`absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0 bg-primary transition-all duration-300 ${
-                        cartAnimation ? 'animate-bounce scale-125' : ''
-                      }`}
+                      className={`absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0 bg-primary transition-all duration-300 ${cartAnimation ? 'animate-bounce scale-125' : ''
+                        }`}
                     >
                       {totalItems}
                     </Badge>
@@ -769,9 +767,8 @@ const Header = () => {
               style={{ fontSize: '0.7rem', minHeight: 28 }}
             >
               <button
-                className={`px-2 py-1 rounded transition-colors ${
-                  activeSection === 'info' ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-500'
-                }`}
+                className={`px-2 py-1 rounded transition-colors ${activeSection === 'info' ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-500'
+                  }`}
                 onClick={() => handleSectionClick('info')}
                 type="button"
                 aria-current={activeSection === 'info' ? 'true' : undefined}
@@ -782,9 +779,8 @@ const Header = () => {
                 |
               </span>
               <button
-                className={`px-2 py-1 rounded transition-colors ${
-                  activeSection === 'reviews' ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-500'
-                }`}
+                className={`px-2 py-1 rounded transition-colors ${activeSection === 'reviews' ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-500'
+                  }`}
                 type="button"
                 onClick={() => handleSectionClick('reviews')}
                 aria-current={activeSection === 'reviews' ? 'true' : 'false'}
@@ -797,9 +793,8 @@ const Header = () => {
                     |
                   </span>
                   <button
-                    className={`px-2 py-1 rounded transition-colors ${
-                      activeSection === 'faqs' ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-500'
-                    }`}
+                    className={`px-2 py-1 rounded transition-colors ${activeSection === 'faqs' ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-500'
+                      }`}
                     type="button"
                     onClick={() => handleSectionClick('faqs')}
                     aria-current={activeSection === 'faqs' ? 'true' : 'false'}
@@ -821,9 +816,8 @@ const Header = () => {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`px-6 py-3 font-medium text-white hover:text-white/80 transition-colors ${
-                  idx !== 0 ? 'border-l border-white/25' : ''
-                }`}
+                className={`px-6 py-3 font-medium text-white hover:text-white/80 transition-colors ${idx !== 0 ? 'border-l border-white/25' : ''
+                  }`}
               >
                 {item.name}
               </Link>
@@ -841,7 +835,7 @@ const Header = () => {
           </SheetHeader>
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between px-4 py-3 border-b">
-            <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center">
+              <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center">
                 <img
                   src={`${WP_BASE_URL}/wp-content/uploads/2025/08/Kitchenhero-logo.png`}
                   alt="Logo"

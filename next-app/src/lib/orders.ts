@@ -56,3 +56,31 @@ export async function fetchOrderById(id: string, signal?: AbortSignal): Promise<
 
   return response.json();
 }
+
+export async function fetchOrders(customerId: number, signal?: AbortSignal): Promise<WooOrder[]> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  if (PROXY_SECRET) {
+    headers['X-HPM-Secret'] = PROXY_SECRET;
+  }
+
+  const response = await fetch(`${WP_PROXY_BASE_URL}/proxy`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      endpoint: '/orders',
+      params: { customer: customerId, per_page: 20 },
+      method: 'GET',
+    }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => response.statusText);
+    throw new Error(text || 'Unable to load orders');
+  }
+
+  return response.json();
+}

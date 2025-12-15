@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import ProductActionButtons from '../product/ProductActionButtons';
@@ -29,7 +31,7 @@ const ProductBottomMenu = ({
   onScrollToVariations
 }: ProductBottomMenuProps) => {
   const { isOpen: isCartOpen } = useCartStore();
-  
+
   const handleDisabledClick = () => {
     if (disabled && disabledMessage) {
       alert(disabledMessage);
@@ -42,9 +44,14 @@ const ProductBottomMenu = ({
   const addToCartText = currentQuantity > 0 ? `Add to Cart (${currentQuantity})` : 'Add to Cart';
 
   const isNative = Capacitor.isNativePlatform();
-  
+
   // State to track if mobile menu is open
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Check for mobile menu state changes
   useEffect(() => {
@@ -78,14 +85,14 @@ const ProductBottomMenu = ({
   }, []);
 
   // Hide bottom menu when cart is open or mobile menu is open
-  if (isCartOpen || isMobileMenuOpen) {
+  if (!mounted || isCartOpen || isMobileMenuOpen) {
     return null;
   }
-  
+
   const menuContent = (
-    <div 
+    <div
       className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border z-[99999] p-3 shadow-lg"
-      style={{ 
+      style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
@@ -133,7 +140,7 @@ const ProductBottomMenu = ({
   if (typeof window !== 'undefined' && document.body) {
     return createPortal(menuContent, document.body);
   }
-  
+
   return null;
 };
 

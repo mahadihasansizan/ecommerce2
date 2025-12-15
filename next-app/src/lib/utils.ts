@@ -52,9 +52,35 @@ export function mapMetaToProduct(product: WooProduct): WooProduct {
   return product;
 }
 
-const FALLBACK_CURRENCY_SYMBOL = "BDT ";
+const FALLBACK_CURRENCY_SYMBOL = "$";
 let cachedCurrencySymbol: string | null = null;
 let cachedCurrencyCode: string | null = null;
+
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  'BDT': '৳',
+  'THB': '฿',
+  'USD': '$',
+  'GBP': '£',
+  'EUR': '€',
+  'INR': '₹',
+  'CNY': '¥',
+  'JPY': '¥',
+  'AUD': '$',
+  'CAD': '$',
+  'SGD': '$',
+  'MYR': 'RM',
+  'IDR': 'Rp',
+  'PKR': '₨',
+  'LKR': 'Rs',
+  'AED': 'د.إ',
+  'SAR': '﷼',
+  'QAR': '﷼',
+  'ZAR': 'R',
+  'BRL': 'R$',
+  'RUB': '₽',
+  'KRW': '₩',
+  'TRY': '₺',
+};
 
 const loadStoredCurrencySymbol = (): string | null => {
   try {
@@ -121,8 +147,13 @@ export const getCurrencySymbolSync = (): string => {
     cachedCurrencySymbol = stored;
     return stored;
   }
-  // Don't return fallback immediately - try to load from WooCommerce first
-  // This will be called during initialization
+
+  // Try to resolve from cached code if available
+  const code = getCurrencyCodeSync();
+  if (code && CURRENCY_SYMBOLS[code]) {
+    return CURRENCY_SYMBOLS[code];
+  }
+
   return FALLBACK_CURRENCY_SYMBOL;
 };
 
@@ -137,8 +168,23 @@ export const getCurrencySymbolAsync = async (forceRefresh: boolean = false): Pro
   }
   try {
     const ctx = await getStoreContext(forceRefresh);
-    const symbol = ctx.currency_symbol || ctx.currency || FALLBACK_CURRENCY_SYMBOL;
-    if (ctx.currency) setCurrencyCode(ctx.currency);
+
+    // Resolve symbol: Map(code) -> ctx.symbol -> ctx.code -> fallback
+    let symbol = FALLBACK_CURRENCY_SYMBOL;
+
+    if (ctx.currency) {
+      setCurrencyCode(ctx.currency);
+      if (CURRENCY_SYMBOLS[ctx.currency]) {
+        symbol = CURRENCY_SYMBOLS[ctx.currency];
+      } else if (ctx.currency_symbol) {
+        symbol = ctx.currency_symbol;
+      } else {
+        symbol = ctx.currency;
+      }
+    } else if (ctx.currency_symbol) {
+      symbol = ctx.currency_symbol;
+    }
+
     const finalSymbol = symbol.endsWith(' ') ? symbol : `${symbol} `;
     setCurrencySymbol(finalSymbol);
     return cachedCurrencySymbol || FALLBACK_CURRENCY_SYMBOL;
@@ -247,15 +293,15 @@ export const highlightSearchTerm = (text: string, searchTerm: string, maxLength:
     // Try to center the search term in the visible portion
     const halfLength = Math.floor(maxLength / 2);
     const searchCenter = start + (searchTerm.length / 2);
-    
+
     displayStart = Math.max(0, Math.floor(searchCenter - halfLength));
     displayEnd = Math.min(text.length, displayStart + maxLength);
-    
+
     // Adjust if we're near the start or end
     if (displayEnd - displayStart < maxLength) {
       displayStart = Math.max(0, displayEnd - maxLength);
     }
-    
+
     if (displayStart > 0) showStartEllipsis = true;
     if (displayEnd < text.length) showEndEllipsis = true;
   }
@@ -430,11 +476,11 @@ export const fetchSiteInfo = async (): Promise<{ site_name: string; store_base_u
     try {
       const WP_PROXY_BASE = envVars.NEXT_PUBLIC_WP_PROXY_BASE_URL || '/wp-json/headless-proxy/v1';
       const response = await fetch(`${WP_PROXY_BASE}/site-info`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch site info: ${response.status}`);
       }
-      
+
       const data = await response.json();
       cachedSiteInfo = {
         site_name: data.site_name || 'Store',
@@ -540,12 +586,12 @@ export const cleanPathForCanonical = (path: string): string => {
 export const shouldCanonicalizeToBase = (currentPath: string, basePath: string): boolean => {
   const cleanCurrent = cleanPathForCanonical(currentPath);
   const cleanBase = cleanPathForCanonical(basePath);
-  
+
   // If paths are the same after cleaning, no need to canonicalize
   if (cleanCurrent === cleanBase) {
     return false;
   }
-  
+
   // Check if current path starts with base path (e.g., filtered category page)
   return cleanCurrent.startsWith(cleanBase);
 };

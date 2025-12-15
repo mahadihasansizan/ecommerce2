@@ -2,7 +2,6 @@ import ProductsClient from './ProductsClient';
 import { loadProductsPageData } from '@/ssr/loaders';
 import { generateOrganizationSchema, generateWebsiteSchema } from '@/lib/schema-generator';
 import type { Metadata } from 'next';
-import type { ReadonlyURLSearchParams } from 'next/navigation';
 import { getSiteUrl } from '@/lib/utils';
 import { HSEOHeadData } from '@/lib/hseo';
 import { normalizeOpenGraphType, normalizeTwitterCard } from '@/lib/metadata-utils';
@@ -47,19 +46,11 @@ const buildUrl = (searchParams: URLSearchParams) => {
   return url.toString();
 };
 
-const normalizeSearchParams = (searchParams?: ReadonlyURLSearchParams): URLSearchParams => {
+const normalizeSearchParams = (searchParams?: Record<string, string | string[] | undefined>): URLSearchParams => {
   const params = new URLSearchParams();
   if (!searchParams) return params;
 
-  if (typeof (searchParams as any).entries === 'function') {
-    for (const [key, value] of (searchParams as any).entries()) {
-      params.append(key, value);
-    }
-    return params;
-  }
-
-  const entries = Object.entries(searchParams as unknown as Record<string, string | string[] | undefined>);
-  entries.forEach(([key, value]) => {
+  Object.entries(searchParams).forEach(([key, value]) => {
     if (Array.isArray(value)) {
       value.forEach((v) => v && params.append(key, v));
     } else if (typeof value !== 'undefined') {
@@ -70,13 +61,15 @@ const normalizeSearchParams = (searchParams?: ReadonlyURLSearchParams): URLSearc
   return params;
 };
 
-export async function generateMetadata({ searchParams }: { searchParams?: ReadonlyURLSearchParams }): Promise<Metadata> {
+export async function generateMetadata(props: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  const searchParams = await props.searchParams;
   const params = normalizeSearchParams(searchParams);
   const data = await loadProductsPageData(buildUrl(params));
   return buildMetadataFromSeo(data['seo:/products'] || null);
 }
 
-const ProductsPage = async ({ searchParams }: { searchParams?: ReadonlyURLSearchParams }) => {
+const ProductsPage = async (props: { searchParams: Promise<Record<string, string | string[] | undefined>> }) => {
+  const searchParams = await props.searchParams;
   const params = normalizeSearchParams(searchParams);
   const data = await loadProductsPageData(buildUrl(params));
   const list = data['products:list'];
@@ -94,12 +87,12 @@ const ProductsPage = async ({ searchParams }: { searchParams?: ReadonlyURLSearch
         }
       >
         <ProductsClient
-        products={list.products}
-        total={list.total}
-        categories={list.categories}
-        activeCategory={list.categorySlug}
-        initialSort={list.sortBy}
-      />
+          products={list.products}
+          total={list.total}
+          categories={list.categories}
+          activeCategory={list.categorySlug}
+          initialSort={list.sortBy}
+        />
       </Suspense>
       <script
         type="application/ld+json"

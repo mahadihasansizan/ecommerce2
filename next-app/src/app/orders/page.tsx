@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Orders - KitchenHero',
-  description: 'Track the status of your recent orders.',
+  description: 'View your order history and status.',
 };
 
 const OrdersPage = () => <OrdersClient />;

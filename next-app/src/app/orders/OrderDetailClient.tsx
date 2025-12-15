@@ -1,263 +1,282 @@
 ﻿'use client';
 
+import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { useSiteName } from '@/hooks/useSiteInfo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/context/AuthContext';
-import { fetchOrderById, WooOrder } from '@/lib/orders';
-import { deferStateUpdate } from '@/lib/utils';
+import { WP_PROXY_BASE_URL } from '@/lib/config';
+
+type WooLineItem = {
+  id: number;
+  name: string;
+  quantity: number;
+  sku?: string;
+  total: string;
+  price?: string;
+  image?: { src?: string };
+};
+
+type WooOrder = {
+  id: number;
+  status: string;
+  date_created: string;
+  total: string;
+  subtotal?: string;
+  total_tax?: string;
+  discount_total?: string;
+  shipping_total?: string;
+  payment_method_title?: string;
+  transaction_id?: string;
+  currency?: string;
+  line_items?: WooLineItem[];
+  billing?: any;
+  shipping?: any;
+};
+
+const PROXY_SECRET = process.env.NEXT_PUBLIC_WP_ORDER_PROXY_SECRET;
+
+async function fetchOrder(id: string) {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  if (PROXY_SECRET) {
+    headers['X-HPM-Secret'] = PROXY_SECRET;
+  }
+  const resp = await fetch(`${WP_PROXY_BASE_URL}/proxy`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      endpoint: `/orders/${id}`,
+      params: {},
+      method: 'GET',
+    }),
+  });
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || 'Unable to load order');
+  }
+  return (await resp.json()) as WooOrder;
+}
+
+function formatMoney(total?: string, currency?: string) {
+  if (!total) return '0.00';
+  const num = Number(total);
+  const formatted = num.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${currency || ''} ${formatted}`.trim();
+}
 
 const statusColors: Record<string, string> = {
-  processing: 'border-amber-200 bg-amber-100 text-amber-800',
-  completed: 'border-emerald-200 bg-emerald-100 text-emerald-800',
-  pending: 'border-slate-300 bg-slate-100 text-slate-700',
-  cancelled: 'border-rose-200 bg-rose-100 text-rose-700',
-  refunded: 'border-sky-200 bg-sky-100 text-sky-700',
-};
-
-const formatMoney = (value?: string, currency?: string) => {
-  if (!value) return '0.00';
-  const num = Number(value);
-  if (Number.isNaN(num)) return value;
-  const formatted = num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return `${currency ? `${currency} ` : ''}${formatted}`.trim();
-};
-
-const computeTotals = (order?: WooOrder | null) => {
-  if (!order) return null;
-  return {
-    subtotal: order.subtotal || order.total || '0',
-    shipping: order.shipping_total || '0',
-    tax: order.total_tax || '0',
-    discount: Math.abs(Number(order.discount_total || '0')).toString(),
-    total: order.total || '0',
-    currency: order.currency,
-  };
+  processing: 'bg-amber-100 text-amber-800 border-amber-200',
+  completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  pending: 'bg-slate-200 text-slate-700 border-slate-300',
+  cancelled: 'bg-rose-100 text-rose-700 border-rose-200',
+  refunded: 'bg-blue-100 text-blue-700 border-blue-200',
 };
 
 const OrderDetailClient = ({ orderId }: { orderId: string }) => {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
-  const [order, setOrder] = useState<WooOrder | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const siteName = useSiteName();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isAuthenticated && !isLoading) {
       router.replace('/login');
     }
   }, [isAuthenticated, isLoading, router]);
 
-  useEffect(() => {
-    if (!orderId || !isAuthenticated) {
-      return;
-    }
+  const { data, isLoading: orderLoading, error } = useQuery({
+    queryKey: ['order', orderId],
+    queryFn: () => fetchOrder(orderId || ''),
+    enabled: !!orderId && !!isAuthenticated,
+  });
 
-    const controller = new AbortController();
-    deferStateUpdate(() => {
-      setLoading(true);
-      setError(null);
-    });
+  const order = data;
 
-    fetchOrderById(orderId, controller.signal)
-      .then((result) => setOrder(result))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-
-    return () => {
-      controller.abort();
+  const totals = useMemo(() => {
+    if (!order) return null;
+    return {
+      subtotal: order.subtotal || order.total,
+      shipping: order.shipping_total || '0',
+      tax: order.total_tax || '0',
+      discount: order.discount_total || '0',
+      total: order.total,
+      currency: order.currency,
     };
-  }, [orderId, isAuthenticated]);
-
-  const totals = useMemo(() => computeTotals(order), [order]);
-
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <p className="text-muted-foreground">Loading order...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center">
-        <p className="text-2xl font-semibold">Unable to load order</p>
-        <p className="text-muted-foreground">{error}</p>
-        <Button asChild>
-          <Link href="/orders" className="flex items-center gap-2">
-            <ArrowLeftIcon className="h-4 w-4" /> Back to orders
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
-  if (!order) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center text-center px-4">
-        <p className="text-muted-foreground">Order details will appear once the order is placed.</p>
-      </div>
-    );
-  }
+  }, [order]);
 
   return (
-    <div className="container mx-auto px-4 py-10 space-y-8">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground">Order</p>
-          <h1 className="text-3xl font-bold">Order #{order.number || order.id}</h1>
-          <p className="text-muted-foreground">Status: {order.status || 'processing'}</p>
+    <div className="min-h-screen bg-slate-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="flex items-center gap-3 mb-6">
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/orders">
+              <ArrowLeftIcon className="h-4 w-4 mr-2" />
+              Back to Orders
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-semibold">Order #{orderId}</h1>
         </div>
-        <Button asChild>
-          <Link href="/orders" className="flex items-center gap-2">
-            <ArrowLeftIcon className="h-4 w-4" /> Back to orders
-          </Link>
-        </Button>
-      </div>
 
-      <Card className="space-y-6">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Order Summary</span>
-            <Badge className={`border ${statusColors[order.status || 'pending'] || statusColors.pending}`}>
-              {order.status?.replace(/_/g, ' ') || 'pending'}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm text-muted-foreground">Placed on</p>
-              <p>{order.date_created ? new Date(order.date_created).toLocaleDateString() : '—'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total amount</p>
-              <p className="text-lg font-semibold">
-                {formatMoney(totals?.total, totals?.currency)}
-              </p>
-            </div>
-          </div>
+        {orderLoading && (
+          <Card className="p-6">
+            <p className="text-muted-foreground">Loading order...</p>
+          </Card>
+        )}
 
-          <div className="space-y-4">
-            {(order.line_items || []).map((item) => (
-              <div key={item.id} className="flex flex-col gap-3 rounded-2xl border border-border p-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center gap-3">
-                    {item.image?.src ? (
-                      <img src={item.image.src} alt={item.name} className="h-16 w-16 rounded-xl object-cover" />
-                    ) : (
-                      <div className="h-16 w-16 rounded-xl bg-muted" />
+        {error && (
+          <Card className="p-6 border border-rose-200">
+            <p className="text-rose-600">Failed to load order.</p>
+          </Card>
+        )}
+
+        {order && (
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
+            <div className="space-y-6">
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold">Order Summary</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Placed on{' '}
+                      {new Date(order.date_created).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                    </p>
+                  </div>
+                  <Badge className={`capitalize border ${statusColors[order.status] || statusColors.pending}`}>
+                    {order.status}
+                  </Badge>
+                </div>
+
+                <div className="space-y-4">
+                  {(order.line_items || []).map((item) => (
+                    <div key={item.id} className="flex gap-4 pb-4 border-b last:border-b-0 last:pb-0">
+                      {item.image?.src ? (
+                        <img src={item.image.src} alt={item.name} className="h-16 w-16 object-cover rounded" />
+                      ) : (
+                        <div className="h-16 w-16 bg-slate-100 rounded flex items-center justify-center text-sm text-muted-foreground">
+                          Item
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">SKU: {item.sku || 'N/A'}</p>
+                        <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">{formatMoney(item.total, order.currency)}</p>
+                        {item.price && (
+                          <p className="text-xs text-muted-foreground">
+                            {formatMoney(item.price, order.currency)} each
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {totals && (
+                  <div className="mt-6 pt-6 border-t space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span>{formatMoney(totals.subtotal, totals.currency)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Shipping</span>
+                      <span>{formatMoney(totals.shipping, totals.currency)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tax</span>
+                      <span>{formatMoney(totals.tax, totals.currency)}</span>
+                    </div>
+                    {totals.discount && totals.discount !== '0' && (
+                      <div className="flex justify-between text-emerald-700">
+                        <span>Discount</span>
+                        <span>-{formatMoney(totals.discount, totals.currency)}</span>
+                      </div>
                     )}
-                    <div>
-                      <p className="font-semibold">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                    <Separator />
+                    <div className="flex justify-between text-base font-semibold">
+                      <span>Total</span>
+                      <span>{formatMoney(totals.total, totals.currency)}</span>
                     </div>
                   </div>
-                  <p className="text-sm font-semibold">{formatMoney(item.total, order.currency)}</p>
+                )}
+              </Card>
+
+              <Card className="p-6">
+                <h2 className="text-lg font-semibold mb-4">Addresses</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {order.billing && (
+                    <div className="space-y-1 text-sm">
+                      <h3 className="font-semibold text-muted-foreground uppercase tracking-wide text-xs">Billing</h3>
+                      <p className="font-medium">
+                        {order.billing.first_name} {order.billing.last_name}
+                      </p>
+                      {order.billing.company && <p>{order.billing.company}</p>}
+                      <p>{order.billing.address_1}</p>
+                      {order.billing.address_2 && <p>{order.billing.address_2}</p>}
+                      <p>
+                        {order.billing.city}, {order.billing.state} {order.billing.postcode}
+                      </p>
+                      <p>{order.billing.country}</p>
+                      <p className="pt-2">{order.billing.email}</p>
+                      <p>{order.billing.phone}</p>
+                    </div>
+                  )}
+
+                  {order.shipping && (
+                    <div className="space-y-1 text-sm">
+                      <h3 className="font-semibold text-muted-foreground uppercase tracking-wide text-xs">Shipping</h3>
+                      <p className="font-medium">
+                        {order.shipping.first_name} {order.shipping.last_name}
+                      </p>
+                      {order.shipping.company && <p>{order.shipping.company}</p>}
+                      <p>{order.shipping.address_1}</p>
+                      {order.shipping.address_2 && <p>{order.shipping.address_2}</p>}
+                      <p>
+                        {order.shipping.city}, {order.shipping.state} {order.shipping.postcode}
+                      </p>
+                      <p>{order.shipping.country}</p>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              </Card>
+            </div>
+
+            <div className="space-y-6">
+              <Card className="p-6">
+                <h2 className="text-lg font-semibold mb-4">Order Actions</h2>
+                <p className="text-sm text-muted-foreground">Status updates from this page are not enabled yet.</p>
+              </Card>
+
+              <Card className="p-6">
+                <h2 className="text-lg font-semibold mb-4">Payment</h2>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Method</span>
+                    <span className="font-medium">{order.payment_method_title || 'N/A'}</span>
+                  </div>
+                  {order.transaction_id && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Transaction ID</span>
+                      <span className="font-mono text-xs">{order.transaction_id}</span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
           </div>
-
-          {totals && (
-            <div className="space-y-2 border-t border-border pt-4 text-sm">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>{formatMoney(totals.subtotal, totals.currency)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Shipping</span>
-                <span>{formatMoney(totals.shipping, totals.currency)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Tax</span>
-                <span>{formatMoney(totals.tax, totals.currency)}</span>
-              </div>
-              {totals.discount && totals.discount !== '0' && (
-                <div className="flex justify-between text-rose-600">
-                  <span>Discount</span>
-                  <span>-{formatMoney(totals.discount, totals.currency)}</span>
-                </div>
-              )}
-              <Separator />
-              <div className="flex justify-between font-semibold">
-                <span>Total</span>
-                <span>{formatMoney(totals.total, totals.currency)}</span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="space-y-4">
-          <CardHeader>
-            <CardTitle>Billing Address</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            <p className="font-semibold">
-              {(order.billing?.first_name || '') + ' ' + (order.billing?.last_name || '')}
-            </p>
-            {order.billing?.company && <p>{order.billing.company}</p>}
-            <p>{order.billing?.address_1}</p>
-            {order.billing?.address_2 && <p>{order.billing.address_2}</p>}
-            <p>
-              {order.billing?.city}, {order.billing?.state} {order.billing?.postcode}
-            </p>
-            <p>{order.billing?.country}</p>
-            <p className="text-muted-foreground">{order.billing?.email}</p>
-          </CardContent>
-        </Card>
-        <Card className="space-y-4">
-          <CardHeader>
-            <CardTitle>Shipping Address</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            <p className="font-semibold">
-              {(order.shipping?.first_name || '') + ' ' + (order.shipping?.last_name || '')}
-            </p>
-            <p>{order.shipping?.address_1}</p>
-            {order.shipping?.address_2 && <p>{order.shipping.address_2}</p>}
-            <p>
-              {order.shipping?.city}, {order.shipping?.state} {order.shipping?.postcode}
-            </p>
-            <p>{order.shipping?.country}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Method</span>
-              <span>{order.payment_method_title || 'Cash on delivery'}</span>
-            </div>
-            {order.transaction_id && (
-              <div className="flex justify-between">
-                <span>Transaction ID</span>
-                <span className="font-mono text-xs text-muted-foreground">{order.transaction_id}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        <div className="flex gap-3 flex-wrap">
-          <Button asChild>
-            <Link href="/products">Continue shopping</Link>
-          </Button>
-          <Button variant="ghost" asChild>
-            <Link href="/orders">Back to orders</Link>
-          </Button>
-        </div>
+        )}
       </div>
     </div>
   );

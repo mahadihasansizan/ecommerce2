@@ -8,17 +8,21 @@ import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 
+import { WishlistProvider } from '@/context/WishlistContext';
+
 const queryClient = new QueryClient();
 
 const Providers = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <CartProvider>
-        <TooltipProvider>
-          <RadixToaster />
-          <SonnerToaster />
-          {children}
-        </TooltipProvider>
+        <WishlistProvider>
+          <TooltipProvider>
+            <RadixToaster />
+            <SonnerToaster />
+            {children}
+          </TooltipProvider>
+        </WishlistProvider>
       </CartProvider>
     </AuthProvider>
   </QueryClientProvider>

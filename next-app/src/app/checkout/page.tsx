@@ -27,6 +27,7 @@ import {
   type WooStoreContext
 } from '@/lib/woocommerce';
 import { setCurrencyCode as setGlobalCurrencyCode, setCurrencySymbol as setGlobalCurrencySymbol } from '@/lib/utils';
+import OrderSummary from '@/components/checkout/OrderSummary';
 import {
   ArrowLeft,
   Key,
@@ -106,7 +107,7 @@ const SearchableSelect: React.FC<{
   return (
     <div className="relative" ref={ref}>
       <input
-      value={open ? query : selectedOption?.name || query}
+        value={open ? query : selectedOption?.name || query}
         onChange={(event) => {
           setQuery(event.target.value);
           setOpen(true);
@@ -144,7 +145,7 @@ const SearchableSelect: React.FC<{
 
 const CheckoutPage = () => {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, session } = useAuth();
   const cartStore = useCartStore();
   const {
     items,
@@ -184,7 +185,7 @@ const CheckoutPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [createAccountChecked, setCreateAccountChecked] = useState(false);
   const [accountPassword, setAccountPassword] = useState('');
-  const [localCouponInput, setLocalCouponInput] = useState('');
+
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const authModalTab: 'login' | 'signup' = 'login';
 
@@ -330,7 +331,7 @@ const CheckoutPage = () => {
   const shippingCost = selectedShipping ? Number(selectedShipping.total || 0) : 0;
   const grandTotal = Math.max(0, subtotal - (couponApplied ? couponDiscount : 0)) + shippingCost;
 
-  const formatPrice = (value: number) => `${currencySymbol || currencyCode || ''}${value.toFixed(2)}`;
+
 
   const handleSubmit = async (event?: React.FormEvent) => {
     event?.preventDefault();
@@ -410,11 +411,11 @@ const CheckoutPage = () => {
 
     const shippingLine = selectedShipping
       ? {
-          method_id: selectedShipping.method_id,
-          method_title: selectedShipping.label || 'Shipping',
-          total: Number(selectedShipping.total || 0).toFixed(2),
-          instance_id: selectedShipping.instance_id,
-        }
+        method_id: selectedShipping.method_id,
+        method_title: selectedShipping.label || 'Shipping',
+        total: Number(selectedShipping.total || 0).toFixed(2),
+        instance_id: selectedShipping.instance_id,
+      }
       : undefined;
 
     const lineItems = items.map((item: any) => {
@@ -477,6 +478,7 @@ const CheckoutPage = () => {
       line_items: lineItems,
       shipping_lines: shippingLine ? [shippingLine] : [],
       ...(couponApplied && couponCode ? { coupon_lines: [{ code: couponCode }] } : {}),
+      ...(isAuthenticated && session?.customerId ? { customer_id: Number(session.customerId) } : {}),
     };
 
     try {
@@ -489,7 +491,7 @@ const CheckoutPage = () => {
       }
 
       const order = await createOrder(orderData);
-      
+
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.setItem('kitchenhero-latest-order', JSON.stringify(order));
@@ -497,7 +499,7 @@ const CheckoutPage = () => {
           console.warn('Failed to cache order data for confirmation page:', storageError);
         }
       }
-      
+
       clearCart();
       setIsProcessing(false);
       router.push('/order-confirmation');
@@ -536,7 +538,7 @@ const CheckoutPage = () => {
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="space-y-6">
-          { !isAuthenticated && (
+          {!isAuthenticated && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -621,60 +623,22 @@ const CheckoutPage = () => {
         </div>
 
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Truck className="h-5 w-5 text-primary" />
-                Order summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              {items.map((item: any) => (
-                <div key={item.productId} className="flex items-center justify-between gap-3">
-                  <div className="flex-1">{item.name} x {item.quantity}</div>
-                  <div>{formatPrice(item.price * item.quantity)}</div>
-                </div>
-              ))}
-              <Separator />
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>{formatPrice(subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Shipping</span>
-                <span>{shippingLoading ? 'Calculating...' : shippingCost === 0 ? 'Free' : formatPrice(shippingCost)}</span>
-              </div>
-              {couponApplied && (
-                <div className="flex justify-between text-red-600">
-                  <span>Coupon</span>
-                  <span>-{formatPrice(couponDiscount)}</span>
-                </div>
-              )}
-              <Separator />
-              <div className="flex justify-between font-semibold text-lg">
-                <span>Total</span>
-                <span>{formatPrice(grandTotal)}</span>
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  value={localCouponInput}
-                  onChange={(event) => setLocalCouponInput(event.target.value)}
-                  placeholder="Coupon code"
-                  className="flex-1 px-3 py-2 border rounded"
-                />
-                {!couponApplied ? (
-                  <Button disabled={!localCouponInput.trim() || couponLoading} onClick={() => applyCoupon(localCouponInput)}>
-                    Apply
-                  </Button>
-                ) : (
-                  <Button variant="ghost" onClick={removeCoupon}>Remove</Button>
-                )}
-              </div>
-
-              <Button className="w-full" onClick={handleSubmit}>Place Order</Button>
-            </CardContent>
-          </Card>
+          <OrderSummary
+            items={items}
+            subtotal={subtotal}
+            shippingCost={shippingCost}
+            shippingLoading={shippingLoading}
+            couponApplied={couponApplied}
+            couponDiscount={couponDiscount}
+            grandTotal={grandTotal}
+            currencySymbol={currencySymbol}
+            couponLoading={couponLoading}
+            onApplyCoupon={applyCoupon}
+            onRemoveCoupon={removeCoupon}
+            onPlaceOrder={handleSubmit}
+            isProcessing={isProcessing}
+            paymentMethodTitle={selectedPaymentTitle}
+          />
         </div>
       </div>
 

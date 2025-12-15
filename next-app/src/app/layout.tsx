@@ -9,6 +9,7 @@ import ScrollToTop from "@/components/layout/ScrollToTop";
 import OffCanvasCart from "@/components/cart/OffCanvasCart";
 import MobileBottomMenu from "@/components/mobile/MobileBottomMenu";
 import NativeBrowserBar from "@/components/native/NativeBrowserBar";
+import NextTopLoader from 'nextjs-toploader';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
+        <NextTopLoader
+          color="#22c55e"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #22c55e,0 0 5px #22c55e"
+        />
         <Providers>
           <GlobalLoader>
             <NativeBrowserBar />

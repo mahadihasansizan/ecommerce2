@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import React, { memo, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -6,7 +6,7 @@ import { WooProduct } from '@/lib/woocommerce';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/store/cartStore';
-import { useWishlistStore } from '@/store/wishlistStore';
+import { useWishlist } from '@/context/WishlistContext';
 import { toast } from 'sonner'; // or your preferred toast library
 import { parseVariablePriceRange, formatBDT, numbersFromString, decodeHtmlEntities, getCurrencySymbolSync } from '@/lib/utils';
 import { gsap } from 'gsap';
@@ -23,11 +23,17 @@ interface ProductCardProps {
 
 const ProductCard = memo(({ product, className = '', hideGalleryThumbs = false, hideWishlistIcon = false, priority = false }: ProductCardProps & { priority?: boolean }) => {
   const { addToCart } = useCartStore();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const cardRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const isWishlisted = isInWishlist(product.id);
+
   const siteName = useSiteName();
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!cardRef.current) return;
@@ -74,8 +80,8 @@ const ProductCard = memo(({ product, className = '', hideGalleryThumbs = false, 
       const { min, max } = html ? parseVariablePriceRange(html) : {};
 
       if (typeof min === 'number' && typeof max === 'number') {
-        if (min === max) return <span className="text-primary font-bold">{formatBDT(min)}</span>;
-        return <span className="text-primary font-bold">{formatBDT(min)}-{formatBDT(max)}</span>;
+        if (min === max) return <span suppressHydrationWarning className="text-primary font-bold">{formatBDT(min)}</span>;
+        return <span suppressHydrationWarning className="text-primary font-bold">{formatBDT(min)}-{formatBDT(max)}</span>;
       }
 
       // fallback: try any numbers present in price_html or product.price
@@ -83,11 +89,11 @@ const ProductCard = memo(({ product, className = '', hideGalleryThumbs = false, 
       if (nums.length >= 2) {
         const lo = Math.min(...nums);
         const hi = Math.max(...nums);
-        if (lo === hi) return <span className="text-primary font-bold">{formatBDT(lo)}</span>;
-        return <span className="text-primary font-bold">{formatBDT(lo)}-{formatBDT(hi)}</span>;
+        if (lo === hi) return <span suppressHydrationWarning className="text-primary font-bold">{formatBDT(lo)}</span>;
+        return <span suppressHydrationWarning className="text-primary font-bold">{formatBDT(lo)}-{formatBDT(hi)}</span>;
       }
       if (nums.length === 1) {
-        return <span className="text-primary font-bold">{formatBDT(nums[0])}</span>;
+        return <span suppressHydrationWarning className="text-primary font-bold">{formatBDT(nums[0])}</span>;
       }
 
       return null;
@@ -95,9 +101,9 @@ const ProductCard = memo(({ product, className = '', hideGalleryThumbs = false, 
 
     // Simple product: show single price
     const base = parseFloat(String(product.price ?? ''));
-    if (!Number.isNaN(base)) return <span className="text-primary font-bold">{formatBDT(base)}</span>;
+    if (!Number.isNaN(base)) return <span suppressHydrationWarning className="text-primary font-bold">{formatBDT(base)}</span>;
     const symbol = getCurrencySymbolSync();
-    return <span className="text-primary font-bold">{symbol}{product.price}</span>;
+    return <span suppressHydrationWarning className="text-primary font-bold">{symbol}{product.price}</span>;
   };
 
   const handleBuyNow = (e: React.MouseEvent) => {
@@ -114,7 +120,7 @@ const ProductCard = memo(({ product, className = '', hideGalleryThumbs = false, 
       removeFromWishlist(product.id);
       toast.success('Removed from wishlist');
     } else {
-      addToWishlist(product);
+      addToWishlist(product.id);
       toast.success('Added to wishlist');
     }
   };
@@ -181,8 +187,8 @@ const ProductCard = memo(({ product, className = '', hideGalleryThumbs = false, 
                     half
                       ? `url(#pcard-half-${product.id}-${i})`
                       : filled
-                      ? '#f59e0b'
-                      : '#d1d5db'
+                        ? '#f59e0b'
+                        : '#d1d5db'
                   }
                   d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 0 0 .95.69h4.175c.97 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 0 0-.364 1.118l1.287 3.966c.3.922-.756 1.688-1.54 1.118l-3.38-2.454a1 1 0 0 0-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 0 0-.364-1.118L2.04 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 0 0 .95-.69l1.286-3.967Z"
                 />
@@ -230,19 +236,19 @@ const ProductCard = memo(({ product, className = '', hideGalleryThumbs = false, 
 
           {/* Gallery thumbnails removed - no longer showing */}
         </Link>
-        
+
         {/* Wishlist Button - Always visible (unless hidden) */}
         {!hideWishlistIcon && (
           <button
             onClick={handleWishlistToggle}
-            className={`absolute top-2 right-2 z-10 transition-all p-2 min-w-[44px] min-h-[44px] flex items-center justify-center ${
-              isWishlisted
-                ? 'text-primary'
-                : 'text-gray-600 hover:text-primary'
-            }`}
+            className={`absolute top-2 right-2 z-10 transition-all p-2 min-w-[44px] min-h-[44px] flex items-center justify-center ${isMounted && isWishlisted
+              ? 'text-primary'
+              : 'text-gray-600 hover:text-primary'
+              }`}
             aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+            suppressHydrationWarning
           >
-            {isWishlisted ? (
+            {isMounted && isWishlisted ? (
               <HeartIconSolid className="h-5 w-5" />
             ) : (
               <HeartIcon className="h-5 w-5" />

@@ -35,7 +35,7 @@ const stripHtml = (html?: string) =>
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
-;
+  ;
 
 const decodeEntities = (input?: string) => {
   if (!input) return "";
@@ -66,6 +66,23 @@ const ProductCollectionLayout = memo(({ product }: { product: WooProduct }) => {
   const { addToCart, openCart } = useCartStore();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
   const isWishlisted = isInWishlist(product.id);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isWishlisted) {
+      removeFromWishlist(product.id);
+      sonnerToast.success('Removed from wishlist');
+    } else {
+      addToWishlist(product);
+      sonnerToast.success('Added to wishlist');
+    }
+  };
 
   /* Layout Settings State */
   const [layoutSettings, setLayoutSettings] = useState<{
@@ -245,8 +262,8 @@ const ProductCollectionLayout = memo(({ product }: { product: WooProduct }) => {
       typeof raw === "number"
         ? raw
         : typeof raw === "string"
-        ? parseInt(raw, 10)
-        : NaN;
+          ? parseInt(raw, 10)
+          : NaN;
     if (!Number.isNaN(n)) return n;
     if (typeof v?.menu_order === "number") return v.menu_order;
     return Number.MAX_SAFE_INTEGER;
@@ -474,18 +491,18 @@ const ProductCollectionLayout = memo(({ product }: { product: WooProduct }) => {
   };
 
   /* Reviews + FAQs */
-    // Accordion Tabs State (Description / Reviews / FAQs)
-    const [openTabs, setOpenTabs] = useState<{ desc: boolean; reviews: boolean; faqs: boolean }>({
-      desc: true,
-      reviews: false,
-      faqs: false
-    });
+  // Accordion Tabs State (Description / Reviews / FAQs)
+  const [openTabs, setOpenTabs] = useState<{ desc: boolean; reviews: boolean; faqs: boolean }>({
+    desc: true,
+    reviews: false,
+    faqs: false
+  });
   const [reviews, setReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>([]);
   const [loadingFaqs, setLoadingFaqs] = useState(false);
   const [faqOpenIndex, setFaqOpenIndex] = useState(0);
-  const [ratingSummary, setRatingSummary] = useState<{ avg:number; count:number }>({ avg:0, count:0 });
+  const [ratingSummary, setRatingSummary] = useState<{ avg: number; count: number }>({ avg: 0, count: 0 });
   const [customLabels, setCustomLabels] = useState<string[]>([]);
   const [loadingLabels, setLoadingLabels] = useState(false);
 
@@ -557,7 +574,7 @@ const ProductCollectionLayout = memo(({ product }: { product: WooProduct }) => {
         fetchedFaqs = data.data.faqs;
       }
       setFaqs(fetchedFaqs);
-      
+
       // Update window history state to notify Header component
       if (typeof window !== 'undefined') {
         const currentState = window.history.state || {};
@@ -566,7 +583,7 @@ const ProductCollectionLayout = memo(({ product }: { product: WooProduct }) => {
           '',
           window.location.href
         );
-        
+
         // Dispatch custom event for Header to listen to
         window.dispatchEvent(new CustomEvent('faqCountUpdated', { detail: { count: fetchedFaqs.length } }));
       }
@@ -670,7 +687,7 @@ const ProductCollectionLayout = memo(({ product }: { product: WooProduct }) => {
         {
           id: Date.now(),
           author: reviewForm.name,
-          content: `<p>${reviewForm.comment.replace(/\n+/g,"<br/>")}</p>`,
+          content: `<p>${reviewForm.comment.replace(/\n+/g, "<br/>")}</p>`,
           rating: reviewForm.rating,
           verified: data.verified === "yes",
           pending: true,
@@ -700,8 +717,8 @@ const ProductCollectionLayout = memo(({ product }: { product: WooProduct }) => {
   const avgRating = ratingSummary.avg > 0
     ? ratingSummary.avg
     : (publishedLocal.length
-        ? publishedLocal.reduce((s, r) => s + (r.rating || 0), 0) / publishedLocal.length
-        : 0);
+      ? publishedLocal.reduce((s, r) => s + (r.rating || 0), 0) / publishedLocal.length
+      : 0);
 
   const renderDetailRating = useCallback(() => {
     if (!totalReviews || avgRating <= 0) return null;
@@ -785,7 +802,7 @@ const ProductCollectionLayout = memo(({ product }: { product: WooProduct }) => {
       })),
     [images]
   );
-  const handleMobileThumbsScroll = () => {};
+  const handleMobileThumbsScroll = () => { };
 
   /* Variation card desc toggle */
   const toggleDesc = (id: number, e?: React.MouseEvent) => {
@@ -830,7 +847,7 @@ const ProductCollectionLayout = memo(({ product }: { product: WooProduct }) => {
 
   const renderBoxCard = (v: any) => {
     const selected = v.id === selectedVariationId;
-    const title = (v as any).name?.toString().trim() || (Array.isArray(v.attributes) && v.attributes.map((a:any) => a.option).filter(Boolean).join(" / ")) || "Option";
+    const title = (v as any).name?.toString().trim() || (Array.isArray(v.attributes) && v.attributes.map((a: any) => a.option).filter(Boolean).join(" / ")) || "Option";
     const imgSrc = (v.image && (v as any).image.src) || images[0]?.src || "/placeholder.svg";
     const onSale = !!(v.sale_price && v.sale_price !== "" && v.sale_price !== v.regular_price);
 
@@ -891,34 +908,34 @@ const ProductCollectionLayout = memo(({ product }: { product: WooProduct }) => {
     }
   }
 
-const CURRENCY = getCurrencySymbolSync();
+  const CURRENCY = getCurrencySymbolSync();
 
-const renderPrice = () => {
-  if (product.type === "variable" && product.price_html) {
-    // Prefer parsed numbers from price_html (ins/del), otherwise clean the HTML and show as text
-    const parsed = parseVariablePriceRange(product.price_html || "");
-    if (typeof parsed.min === "number" && typeof parsed.max === "number") {
-      if (parsed.min === parsed.max) return <span className="text-primary">{formatBDT(parsed.min)}</span>;
-      return <span className="text-primary">{formatBDT(parsed.min)}-{formatBDT(parsed.max)}</span>;
+  const renderPrice = () => {
+    if (product.type === "variable" && product.price_html) {
+      // Prefer parsed numbers from price_html (ins/del), otherwise clean the HTML and show as text
+      const parsed = parseVariablePriceRange(product.price_html || "");
+      if (typeof parsed.min === "number" && typeof parsed.max === "number") {
+        if (parsed.min === parsed.max) return <span className="text-primary" suppressHydrationWarning>{formatBDT(parsed.min)}</span>;
+        return <span className="text-primary" suppressHydrationWarning>{formatBDT(parsed.min)}-{formatBDT(parsed.max)}</span>;
+      }
+      const cleaned = cleanPriceHtml(product.price_html || "");
+      // If cleaned contains numbers, format them
+      const nums = numbersFromString(cleaned || "");
+      if (nums.length === 1) return <span className="text-primary" suppressHydrationWarning>{formatBDT(nums[0])}</span>;
+      if (nums.length >= 2) return <span className="text-primary" suppressHydrationWarning>{formatBDT(Math.min(...nums))}-{formatBDT(Math.max(...nums))}</span>;
+      // Fallback: render cleaned text without raw currency duplication
+      return <span className="text-primary" suppressHydrationWarning>{cleaned}</span>;
     }
-    const cleaned = cleanPriceHtml(product.price_html || "");
-    // If cleaned contains numbers, format them
-    const nums = numbersFromString(cleaned || "");
-    if (nums.length === 1) return <span className="text-primary">{formatBDT(nums[0])}</span>;
-    if (nums.length >= 2) return <span className="text-primary">{formatBDT(Math.min(...nums))}-{formatBDT(Math.max(...nums))}</span>;
-    // Fallback: render cleaned text without raw currency duplication
-    return <span className="text-primary">{cleaned}</span>;
-  }
 
-  if (product.sale_price && product.sale_price !== product.regular_price)
-    return (
-      <>
-        <span className="text-primary">{formatBDT(Number(product.sale_price) || 0)}</span>
-        <span className="ml-2 line-through text-muted-foreground text-base">{formatBDT(Number(product.regular_price) || 0)}</span>
-      </>
-    );
-  return <span className="text-primary">{formatBDT(Number(product.price) || 0)}</span>;
-};
+    if (product.sale_price && product.sale_price !== product.regular_price)
+      return (
+        <>
+          <span className="text-primary">{formatBDT(Number(product.sale_price) || 0)}</span>
+          <span className="ml-2 line-through text-muted-foreground text-base">{formatBDT(Number(product.regular_price) || 0)}</span>
+        </>
+      );
+    return <span className="text-primary">{formatBDT(Number(product.price) || 0)}</span>;
+  };
 
   // Pass review count to header via location state
   useEffect(() => {
@@ -963,7 +980,7 @@ const renderPrice = () => {
   /* Render */
   const isNative = Capacitor.isNativePlatform();
   return (
-  <div className={`container mx-auto px-4 md:px-4 py-8 pb-32 md:pb-8 text-left ${isNative ? 'safe-area-x' : ''}`}>
+    <div className={`container mx-auto px-4 md:px-4 py-8 pb-32 md:pb-8 text-left ${isNative ? 'safe-area-x' : ''}`}>
       <Breadcrumb />
 
       <div id="info-section" className="scroll-mt-24 h-0" />
@@ -1029,14 +1046,28 @@ const renderPrice = () => {
                         type="button"
                         aria-label={`Go to image ${i + 1}`}
                         onClick={() => setSliderIndex(i)}
-                        className={`w-2 h-2 rounded-full ${
-                          i === sliderIndex ? "bg-primary" : "bg-white/60"
-                        }`}
+                        className={`w-2 h-2 rounded-full ${i === sliderIndex ? "bg-primary" : "bg-white/60"
+                          }`}
                       />
                     ))}
                   </div>
                 </>
               )}
+
+              {/* Wishlist Button - Mobile */}
+              <button
+                onClick={handleWishlistToggle}
+                className={`absolute top-3 left-3 z-10 p-2 rounded-full bg-white/80 hover:bg-white shadow-sm transition-all ${isMounted && isWishlisted ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
+                  }`}
+                aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                suppressHydrationWarning
+              >
+                {isMounted && isWishlisted ? (
+                  <HeartIconSolid className="w-5 h-5" />
+                ) : (
+                  <HeartIcon className="w-5 h-5" />
+                )}
+              </button>
             </div>
 
             {/* Mobile thumbnails */}
@@ -1053,11 +1084,10 @@ const renderPrice = () => {
                       key={t.key}
                       type="button"
                       onClick={() => setSliderIndex(t.idx)}
-                      className={`shrink-0 w-16 h-16 rounded border overflow-hidden ${
-                        t.idx === sliderIndex
-                          ? "ring-2 ring-primary border-primary"
-                          : "border-gray-300"
-                      }`}
+                      className={`shrink-0 w-16 h-16 rounded border overflow-hidden ${t.idx === sliderIndex
+                        ? "ring-2 ring-primary border-primary"
+                        : "border-gray-300"
+                        }`}
                     >
                       <img
                         src={t.src}
@@ -1123,6 +1153,21 @@ const renderPrice = () => {
                     </button>
                   </>
                 )}
+
+                {/* Wishlist Button - Desktop */}
+                <button
+                  onClick={handleWishlistToggle}
+                  className={`absolute top-4 left-4 z-10 p-2 rounded-full bg-white/80 hover:bg-white shadow-sm transition-all ${isMounted && isWishlisted ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
+                    }`}
+                  aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                  suppressHydrationWarning
+                >
+                  {isMounted && isWishlisted ? (
+                    <HeartIconSolid className="w-6 h-6" />
+                  ) : (
+                    <HeartIcon className="w-6 h-6" />
+                  )}
+                </button>
               </div>
 
               {SHOW_DESKTOP_THUMBS && images.length > 1 && (
@@ -1137,11 +1182,10 @@ const renderPrice = () => {
                         key={img.id ?? idx}
                         type="button"
                         onClick={() => setSliderIndex(idx)}
-                        className={`shrink-0 w-20 h-20 rounded border overflow-hidden snap-start ${
-                          idx === sliderIndex
-                            ? "ring-2 ring-primary border-primary"
-                            : "border-gray-300"
-                        }`}
+                        className={`shrink-0 w-20 h-20 rounded border overflow-hidden snap-start ${idx === sliderIndex
+                          ? "ring-2 ring-primary border-primary"
+                          : "border-gray-300"
+                          }`}
                       >
                         <img
                           src={img.src}
@@ -1162,27 +1206,8 @@ const renderPrice = () => {
 
           {/* Right: Details */}
           <div className="flex flex-col">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-bold flex-1">{product.name}</h1>
-              <button
-                onClick={() => {
-                  if (isWishlisted) {
-                    removeFromWishlist(product.id);
-                    sonnerToast.success('Removed from wishlist');
-                  } else {
-                    addToWishlist(product);
-                    sonnerToast.success('Added to wishlist');
-                  }
-                }}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-              >
-                {isWishlisted ? (
-                  <HeartIconSolid className="h-6 w-6 text-red-500" />
-                ) : (
-                  <HeartIcon className="h-6 w-6 text-gray-600 hover:text-red-500" />
-                )}
-              </button>
+            <div className="mb-1">
+              <h1 className="text-2xl font-bold">{product.name}</h1>
             </div>
             {renderDetailRating()}
             <div className="mb-2 mt-2 text-sm text-muted-foreground">SKU: {product.sku || "N/A"}</div>
@@ -1328,7 +1353,7 @@ const renderPrice = () => {
                         const title =
                           (v as any).name?.toString().trim() ||
                           (Array.isArray(v.attributes) &&
-                            v.attributes.map((a:any) => a.option).filter(Boolean).join(" / ")) ||
+                            v.attributes.map((a: any) => a.option).filter(Boolean).join(" / ")) ||
                           "Option";
                         const imgSrc =
                           (v as any).image?.src ||
@@ -1363,29 +1388,28 @@ const renderPrice = () => {
                                 setSelectedVariationId(selected ? null : v.id);
                               }
                             }}
-                            className={`relative rounded-lg border transition-all p-4 ${
-                              selected
-                                ? "border-primary ring-1 ring-primary bg-primary/5"
-                                : "border-gray-300 bg-gray-50 hover:border-primary/60"
-                            }`}
+                            className={`relative rounded-lg border transition-all p-4 ${selected
+                              ? "border-primary ring-1 ring-primary bg-primary/5"
+                              : "border-gray-300 bg-gray-50 hover:border-primary/60"
+                              }`}
                           >
                             {recLabel && (
-  <span className="absolute top-0 right-2 bg-yellow-400 text-black text-[8px] font-semibold rounded-full shadow px-3 py-1 z-10">
-      {recLabel}
-  </span>
-)}
+                              <span className="absolute top-0 right-2 bg-yellow-400 text-black text-[8px] font-semibold rounded-full shadow px-3 py-1 z-10">
+                                {recLabel}
+                              </span>
+                            )}
 
                             {/* Mobile layout */}
                             <div className="md:hidden space-y-3">
                               <div className="grid grid-cols-[64px,1fr,auto] items-center gap-3">
-                                        <div className="w-16 h-16 rounded overflow-hidden bg-white border">
-                                          <img
-                                            src={imgSrc}
-                                            alt={title}
-                                            className="w-full h-full object-cover"
-                                            loading="lazy"
-                                          />
-                                        </div>
+                                <div className="w-16 h-16 rounded overflow-hidden bg-white border">
+                                  <img
+                                    src={imgSrc}
+                                    alt={title}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                  />
+                                </div>
                                 <div className="min-w-0">
                                   <div className="font-semibold break-words">{title}</div>
                                 </div>
@@ -1755,9 +1779,8 @@ const renderPrice = () => {
             >
               <span>Product FAQs {faqs.length ? `(${faqs.length})` : ""}</span>
               <svg
-                className={`w-4 h-4 transition-transform ${
-                  openTabs.faqs ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${openTabs.faqs ? "rotate-180" : ""
+                  }`}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -1791,9 +1814,8 @@ const renderPrice = () => {
                           >
                             <span>{f.question}</span>
                             <svg
-                              className={`w-4 h-4 transition-transform ${
-                                open ? "rotate-180" : ""
-                              }`}
+                              className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""
+                                }`}
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="currentColor"
@@ -1986,11 +2008,10 @@ const renderPrice = () => {
                       key={st}
                       type="button"
                       onClick={() => setRevForm(f => ({ ...f, rating: st }))}
-                      className={`w-8 h-8 flex items-center justify-center rounded border ${
-                        revForm.rating >= st
-                          ? "bg-yellow-400 text-white border-yellow-400"
-                          : "border-gray-300"
-                      }`}
+                      className={`w-8 h-8 flex items-center justify-center rounded border ${revForm.rating >= st
+                        ? "bg-yellow-400 text-white border-yellow-400"
+                        : "border-gray-300"
+                        }`}
                     >
                       ★
                     </button>
@@ -2148,9 +2169,8 @@ const renderPrice = () => {
                   <button
                     key={idx}
                     onClick={() => setReviewLightbox({ ...reviewLightbox, index: idx })}
-                    className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden ${
-                      idx === reviewLightbox.index ? 'border-white' : 'border-gray-500'
-                    }`}
+                    className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden ${idx === reviewLightbox.index ? 'border-white' : 'border-gray-500'
+                      }`}
                   >
                     <img
                       src={imgSrc}
