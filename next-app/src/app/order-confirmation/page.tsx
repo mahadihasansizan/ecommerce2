@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import OrderConfirmationClient from './OrderConfirmationClient';
 import { getSiteName } from '@/lib/tenant-config';
 import { getSiteUrl } from '@/lib/utils';
 import { getHSEOHeadForRoute, HSEOHeadData } from '@/lib/hseo';
 import { normalizeOpenGraphType, normalizeTwitterCard } from '@/lib/metadata-utils';
+
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
 
 const buildMetadataFromSeo = (seoData: HSEOHeadData | null): Metadata => {
   const siteUrl = getSiteUrl();
@@ -37,6 +41,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildMetadataFromSeo(seoData);
 }
 
-const OrderConfirmationPage = () => <OrderConfirmationClient />;
+const OrderConfirmationPage = () => (
+  <Suspense fallback={<div className="container mx-auto px-4 py-12 text-center">Loading...</div>}>
+    <OrderConfirmationClient />
+  </Suspense>
+);
 
 export default OrderConfirmationPage;
